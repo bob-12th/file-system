@@ -93,7 +93,7 @@ void extract_gpt_info(const char *image_path)
         unsigned char filetype[5];
         fseek(f,(unsigned char)firstLBA_integer * 512 + 3 , SEEK_SET);
         fread(filetype, sizeof(unsigned char), 4, f);
-        filetype[5] = '\0';
+        filetype[4] = '\0';
         printf("%s",filetype);
         printf("\n");
 
@@ -111,7 +111,25 @@ void extract_gpt_info(const char *image_path)
         }
         printf("\n");
 
-        printf("Size\n>> %ld\n\n", (lastLBA_integer - firstLBA_integer) * 512);
+        swapEndianness(ptr->FirstLBA,sizeof(ptr->FirstLBA));
+        swapEndianness(ptr->LastLBA,sizeof(ptr->LastLBA));
+        
+        printf("FirstLBA\n>> ");
+        for (int i = 0; i < 8; i++)
+        {
+            printf("%02x ", (unsigned char)ptr->FirstLBA[i]);
+        }
+        printf("\n");
+
+        printf("LastLBA\n>> ");
+        for (int i = 0; i < 8; i++)
+        {
+            printf("%02x ", (unsigned char)ptr->LastLBA[i]);
+        }
+        printf("\n");
+
+
+        printf("Size\n>> %ld\n\n", (lastLBA_integer - firstLBA_integer + 1) * 512);
 
         // filetype을 파싱하기 위해 움직였던 파일 읽기 포인터를 다은 파티션을 가리키게
         fseek(f, 1024 + 128 * cnt, SEEK_SET);
