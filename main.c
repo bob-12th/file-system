@@ -111,7 +111,7 @@ void extract_gpt_info(const char *image_path)
         }
         printf("\n");
 
-        printf("Size\n>> %d\n\n", (lastLBA_integer - firstLBA_integer) * 512);
+        printf("Size\n>> %ld\n\n", (lastLBA_integer - firstLBA_integer) * 512);
 
         // filetype을 파싱하기 위해 움직였던 파일 읽기 포인터를 다은 파티션을 가리키게
         fseek(f, 1024 + 128 * cnt, SEEK_SET);
