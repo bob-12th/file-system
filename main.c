@@ -60,7 +60,7 @@ void extract_partition(Partition *ptr, FILE *f, uint64_t base)
     // uint32_t LBSStartAddress = ptr->LBSStartAddress[0] + (ptr->LBSStartAddress[1] << 8) + (ptr->LBSStartAddress[2] << 16) + (ptr->LBSStartAddress[3] << 24);
     // uint32_t LBSStartAddress = *(uint32_t *)ptr->LBSStartAddress;
 
-    printf("Real start address (DEC) : %lld", base + LBSStartAddress * 512);
+    printf("Real start address (DEC) : %lu", base + LBSStartAddress * 512);
     printf("\nFileType : ");
     unsigned char filetype[5];
     fseek(f, (unsigned char)LBSStartAddress * 512 + 3, SEEK_SET);
@@ -76,7 +76,7 @@ void extract_partition(Partition *ptr, FILE *f, uint64_t base)
     // int32_t MBRSize = bytesToInt64(ptr->partitionSize);
     uint64_t MBRSize = (ptr->partitionSize[0] << 24) + (ptr->partitionSize[1] << 16) + (ptr->partitionSize[2] << 8) + ptr->partitionSize[3];
 
-    printf("\nfile size : %lld bytes\n", MBRSize * 512);
+    printf("\nfile size : %lu bytes\n", MBRSize * 512);
 }
 
 void extract_ebr_info(Partition *ptr, FILE *f, uint64_t EBRBaseAddress, uint64_t EBRStartAddress)
