@@ -1,5 +1,12 @@
 #include <stdio.h>
 #include <stdint.h>
+
+/*
+수정해야할 사항
+1. 파라미터로 입력받고 프로그램 실행
+2. 주석 보충 설명 더
+3. printf 다 지우기
+*/
 struct MBR
 {
     uint8_t activeFlag[1];
