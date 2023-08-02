@@ -1,13 +1,8 @@
 #include <stdio.h>
 #include <stdint.h>
 
-/*
-수정해야할 사항
-1. 파라미터로 입력받고 프로그램 실행
-2. 주석 보충 설명 더
-3. printf 다 지우기
-*/
-struct MBR
+// Partition 정보를 담아줄 구조체
+struct MBR_Partitions
 {
     uint8_t activeFlag[1];
     uint8_t CHSAddress1[3];
@@ -16,18 +11,6 @@ struct MBR
     uint8_t LBSStartAddress[4];
     uint8_t partitionSize[4];
 } typedef Partition;
-
-// 주소 계산을 위해 byte 배열을 64bit int로 변환해주는 함수 구현
-int32_t bytesToInt64(const unsigned char *byteArray)
-{
-    int32_t result = 0;
-
-    result |= ((int32_t)byteArray[0]) << 24;
-    result |= ((int32_t)byteArray[1]) << 16;
-    result |= ((int32_t)byteArray[2]) << 8;
-    result |= ((int32_t)byteArray[3]);
-    return result;
-}
 
 // 엔디안 변환함수
 void swapEndianness(void *data, int size)
@@ -46,28 +29,11 @@ void swapEndianness(void *data, int size)
 
 void extract_partition(Partition *ptr, FILE *f, uint64_t base)
 {
-    /* printf("active or not : %02x\n", (unsigned char)ptr->activeFlag[0]);
-
-    printf("LBS Address of start (before endian swap): ");
-    for (int i = 0; i < 4; i++)
-    {
-        printf("%02x ", (unsigned char)ptr->LBSStartAddress[i]);
-    }
-*/
     swapEndianness(ptr->LBSStartAddress, sizeof(ptr->LBSStartAddress));
     uint64_t LBSStartAddress = (ptr->LBSStartAddress[0] << 24) + (ptr->LBSStartAddress[1] << 16) + (ptr->LBSStartAddress[2] << 8) + ptr->LBSStartAddress[3];
-    /*
-        printf("\nLBS Address of start (after endian swap): ");
-        for (int i = 0; i < 4; i++)
-        {
-            printf("%02x ", (unsigned char)ptr->LBSStartAddress[i]);
-        }
-    */
-    // int32_t LBSStartAddress = bytesToInt64(ptr->LBSStartAddress);
-    // uint32_t LBSStartAddress = ptr->LBSStartAddress[0] + (ptr->LBSStartAddress[1] << 8) + (ptr->LBSStartAddress[2] << 16) + (ptr->LBSStartAddress[3] << 24);
-    // uint32_t LBSStartAddress = *(uint32_t *)ptr->LBSStartAddress;
 
     printf("Real start address (DEC) : %lu", base + LBSStartAddress * 512);
+
     printf("\nFileType : ");
     unsigned char filetype[5];
     fseek(f, (unsigned char)LBSStartAddress * 512 + 3, SEEK_SET);
@@ -75,12 +41,8 @@ void extract_partition(Partition *ptr, FILE *f, uint64_t base)
     filetype[4] = '\0';
     printf("%s", filetype);
 
-    // for (int i = 0 ; i < 4 ; i++)
-    // {
-    //     printf("%02x ",(unsigned char)ptr->partitionSize[i]);
-    // }
+    
     swapEndianness(ptr->partitionSize, sizeof(ptr->partitionSize));
-    // int32_t MBRSize = bytesToInt64(ptr->partitionSize);
     uint64_t MBRSize = (ptr->partitionSize[0] << 24) + (ptr->partitionSize[1] << 16) + (ptr->partitionSize[2] << 8) + ptr->partitionSize[3];
 
     printf("\nfile size : %lu bytes\n", MBRSize * 512);
@@ -89,6 +51,7 @@ void extract_partition(Partition *ptr, FILE *f, uint64_t base)
 void extract_ebr_info(Partition *ptr, FILE *f, uint64_t EBRBaseAddress, uint64_t EBRStartAddress)
 {
     printf("----------------------------------------\n");
+    printf("EBR partition\n\n");
     fseek(f, 446, SEEK_CUR);
     unsigned char partition[16];
     fread(partition, sizeof(unsigned char), 16, f);
@@ -98,11 +61,6 @@ void extract_ebr_info(Partition *ptr, FILE *f, uint64_t EBRBaseAddress, uint64_t
 
     fseek(f, EBRStartAddress + 446 + 16, SEEK_SET);
 
-    // swapEndianness(ptr->LBSStartAddress, sizeof(ptr->LBSStartAddress));
-    // uint64_t NextEBRAddress = (ptr->LBSStartAddress[0] << 24) + (ptr->LBSStartAddress[1] << 16) + (ptr->LBSStartAddress[2] << 8) + ptr->LBSStartAddress[3];
-    // printf("change : %lld\n",NextEBRAddress);
-    // printf("asdf : %lld\n",FirstEBRAddress + 16 * i);
-    // printf("? : %02x",ptr->partitionType[0]);
     fread(partition, sizeof(unsigned char), 16, f);
     ptr = (Partition *)(partition);
     if (ptr->partitionType[0] != 0x05)
@@ -116,10 +74,6 @@ void extract_ebr_info(Partition *ptr, FILE *f, uint64_t EBRBaseAddress, uint64_t
         printf("[Continue parsing..]\n");
         swapEndianness(ptr->LBSStartAddress, sizeof(ptr->LBSStartAddress));
         uint64_t NextEBRAddress = (ptr->LBSStartAddress[0] << 24) + (ptr->LBSStartAddress[1] << 16) + (ptr->LBSStartAddress[2] << 8) + ptr->LBSStartAddress[3];
-        
-        // printf("NextEBRAddress : %lld\n",NextEBRAddress);
-        // printf("%lld\n",EBRBaseAddress + NextEBRAddress * 512);
-        // printf("EBRStartAddress : %lld\n",EBRBaseAddress);
         
         fseek(f, EBRBaseAddress + NextEBRAddress * 512, SEEK_SET); 
         extract_ebr_info(ptr, f, EBRBaseAddress, EBRBaseAddress + NextEBRAddress * 512);
@@ -146,7 +100,7 @@ void extract_mbr_info(const char *image_path)
         fread(partition, sizeof(unsigned char), 16, f);
 
         ptr = (Partition *)(partition);
-        // printf("type : %02x",ptr->partitionType[0]);
+        
         if (ptr->partitionType[0] != 0x07)
         {
             break;
@@ -154,8 +108,6 @@ void extract_mbr_info(const char *image_path)
         printf("----------------------------------------\n");
         printf("Partition #%d\n", i);
         extract_partition(ptr, f, 0);
-
-        // printf("iter %d\n\n", i);
 
         fseek(f, 446 + 16 * i, SEEK_SET);
     }
@@ -165,17 +117,10 @@ void extract_mbr_info(const char *image_path)
         printf("----------------------------------------\n");
         printf("Partition #4\n");
         printf("\n\nEBR partition start..\n");
-        // for (int i = 0; i < 4; i++)
-        // {
-        //     printf("%02x ", ptr->LBSStartAddress[i]);
-        // }
-        // printf("\n\n");
+
         swapEndianness(ptr->LBSStartAddress, sizeof(ptr->LBSStartAddress));
-        // for (int i = 0; i < 4; i++)
-        // {
-        //     printf("%02x ", ptr->LBSStartAddress[i]);
-        // }
         uint64_t LBSStartAddress = (ptr->LBSStartAddress[0] << 24) + (ptr->LBSStartAddress[1] << 16) + (ptr->LBSStartAddress[2] << 8) + ptr->LBSStartAddress[3];
+        
         LBSStartAddress = LBSStartAddress * 512;
 
         fseek(f, LBSStartAddress, SEEK_SET);
@@ -183,10 +128,10 @@ void extract_mbr_info(const char *image_path)
     }
 }
 
-int main()
+int main(int argc, char* argv[])
 {
-    // 이미지 파일 경로를 지정하여 함수를 호출
-    const char *image_path = "mbr_128.dd";
+    // 이미지 파일 경로를 파라미터로 받아서 함수 호출
+    const char *image_path = argv[1];
     extract_mbr_info(image_path);
 
     return 0;
