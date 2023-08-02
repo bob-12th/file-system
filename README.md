@@ -1,2 +1,2 @@
 # GPT
-GPT analysis
+GPT parser
