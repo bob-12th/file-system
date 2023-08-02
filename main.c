@@ -29,6 +29,7 @@ void swapEndianness(void *data, int size)
 
 void extract_partition(Partition *ptr, FILE *f, uint64_t base)
 {
+    // 바이트 배열을 정수형으로 바꿔주기
     swapEndianness(ptr->LBSStartAddress, sizeof(ptr->LBSStartAddress));
     uint64_t LBSStartAddress = (ptr->LBSStartAddress[0] << 24) + (ptr->LBSStartAddress[1] << 16) + (ptr->LBSStartAddress[2] << 8) + ptr->LBSStartAddress[3];
 
@@ -41,7 +42,7 @@ void extract_partition(Partition *ptr, FILE *f, uint64_t base)
     filetype[4] = '\0';
     printf("%s", filetype);
 
-    
+    // 바이트 배열을 정수형으로 바꿔주기    
     swapEndianness(ptr->partitionSize, sizeof(ptr->partitionSize));
     uint64_t MBRSize = (ptr->partitionSize[0] << 24) + (ptr->partitionSize[1] << 16) + (ptr->partitionSize[2] << 8) + ptr->partitionSize[3];
 
@@ -50,15 +51,16 @@ void extract_partition(Partition *ptr, FILE *f, uint64_t base)
 
 void extract_ebr_info(Partition *ptr, FILE *f, uint64_t EBRBaseAddress, uint64_t EBRStartAddress)
 {
+    // Partition 4에서부터 분기하며 정보 출력
     printf("----------------------------------------\n");
     printf("EBR partition\n\n");
     fseek(f, 446, SEEK_CUR);
     unsigned char partition[16];
     fread(partition, sizeof(unsigned char), 16, f);
     ptr = (Partition *)(partition);
-
+    // 실제 파티션 값을 출력해주는 함수 호출
     extract_partition(ptr, f, EBRStartAddress);
-
+    
     fseek(f, EBRStartAddress + 446 + 16, SEEK_SET);
 
     fread(partition, sizeof(unsigned char), 16, f);
@@ -72,10 +74,13 @@ void extract_ebr_info(Partition *ptr, FILE *f, uint64_t EBRBaseAddress, uint64_t
     else{
         printf("\n\n[Next File type is 0x05..]\n");
         printf("[Continue parsing..]\n");
+        // 바이트 배열을 정수형으로 바꿔주기
         swapEndianness(ptr->LBSStartAddress, sizeof(ptr->LBSStartAddress));
         uint64_t NextEBRAddress = (ptr->LBSStartAddress[0] << 24) + (ptr->LBSStartAddress[1] << 16) + (ptr->LBSStartAddress[2] << 8) + ptr->LBSStartAddress[3];
         
         fseek(f, EBRBaseAddress + NextEBRAddress * 512, SEEK_SET); 
+        // 재귀하며 정보를 출력한다
+        // Base 주소를 알아야 하기에 파라미터로 넘겨주고, 다음 EBR의 상대주소도 파라미터로 넘겨주며 분기
         extract_ebr_info(ptr, f, EBRBaseAddress, EBRBaseAddress + NextEBRAddress * 512);
     }
 }
@@ -97,6 +102,7 @@ void extract_mbr_info(const char *image_path)
 
     for (int i = 1; 1; i++)
     {
+        // Data 영역의 파티션들 출력
         fread(partition, sizeof(unsigned char), 16, f);
 
         ptr = (Partition *)(partition);
@@ -117,7 +123,7 @@ void extract_mbr_info(const char *image_path)
         printf("----------------------------------------\n");
         printf("Partition #4\n");
         printf("\n\nEBR partition start..\n");
-
+        // 바이트 배열을 정수형으로 바꿔주기
         swapEndianness(ptr->LBSStartAddress, sizeof(ptr->LBSStartAddress));
         uint64_t LBSStartAddress = (ptr->LBSStartAddress[0] << 24) + (ptr->LBSStartAddress[1] << 16) + (ptr->LBSStartAddress[2] << 8) + ptr->LBSStartAddress[3];
         
