@@ -1,5 +1,5 @@
-# file-parser
-## BoB dev assignment
+# file-system
+## window file parser (based on linux)
 ```
 GPT
 MBR
