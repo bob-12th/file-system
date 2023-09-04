@@ -5,3 +5,7 @@ GPT
 MBR
 FAT32
 ```
+### GPT
+```
+syntax : program_name cluster_num
+```
