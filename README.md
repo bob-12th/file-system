@@ -1,2 +1,0 @@
-# GPT
-GPT parser
