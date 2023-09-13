@@ -1,5 +1,5 @@
 # file-system
-## window file parser (based on linux)
+## window disk parser (based on linux)
 ```
 GPT
 MBR
